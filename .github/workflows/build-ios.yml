@@ -26,19 +26,41 @@ jobs:
         brew install cmake
         # Add other dependencies as needed
         
+    - name: Show environment info
+      run: |
+        echo "Xcode version:"
+        xcodebuild -version
+        echo "CMake version:"
+        cmake --version
+        echo "Current directory:"
+        pwd
+        
     - name: Configure CMake for iOS
       run: |
         cd Telegram
+        echo "Configuring CMake for iOS..."
         cmake -DCMAKE_SYSTEM_NAME=iOS \
               -DCMAKE_OSX_ARCHITECTURES=arm64 \
               -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
               -B build-ios \
-              -S .
+              -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
               
     - name: Build
+      continue-on-error: true
       run: |
         cd Telegram
-        cmake --build build-ios --config Release
+        echo "Building iOS project..."
+        cmake --build build-ios --config Release 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+        
+    - name: Upload build logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          Telegram/cmake-config.log
+          Telegram/build.log
+        retention-days: 7
         
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
