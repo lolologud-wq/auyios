@@ -7,10 +7,15 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "platform/ios/ui/AppDelegate.h"
 #include "core/launcher.h"
+#include "mainwidget.h"
+#include "window/window_controller.h"
+#include "platform/ios/ui/MainWidgetIOS.h"
 
 #import <UIKit/UIKit.h>
 
 @interface AppDelegate ()
+
+@property (strong, nonatomic) MainWidgetIOS *mainWidgetController;
 
 @end
 
@@ -21,12 +26,18 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     
     // Initialize Telegram Desktop launcher
-    // Note: This is a placeholder - full integration requires significant work
-    // const auto launcher = Core::Launcher::Create(argc, argv);
+    // Note: Full integration requires creating Window::Controller and MainWidget
+    // For now, create a placeholder UI
     
-    // Set root view controller
-    // UIViewController *rootVC = [[MainViewController alloc] init];
-    // self.window.rootViewController = rootVC;
+    // Create main widget controller
+    // MainWidget *mainWidget = /* create from Window::Controller */;
+    // self.mainWidgetController = [[MainWidgetIOS alloc] initWithMainWidget:mainWidget];
+    // self.window.rootViewController = self.mainWidgetController;
+    
+    // Temporary: Create a basic view controller
+    UIViewController *rootVC = [[UIViewController alloc] init];
+    rootVC.view.backgroundColor = [UIColor systemBackgroundColor];
+    self.window.rootViewController = rootVC;
     
     [self.window makeKeyAndVisible];
     

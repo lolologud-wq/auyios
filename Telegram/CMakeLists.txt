@@ -4,7 +4,11 @@
 # For license and copyright information please follow this link:
 # https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
-add_executable(Telegram WIN32 MACOSX_BUNDLE)
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    add_executable(Telegram MACOSX_BUNDLE)
+else()
+    add_executable(Telegram WIN32 MACOSX_BUNDLE)
+endif()
 init_non_host_target(Telegram)
 
 add_subdirectory(lib_rpl)
@@ -1596,6 +1600,65 @@ PRIVATE
     platform/mac/touchbar/mac_touchbar_manager.mm
     platform/mac/touchbar/mac_touchbar_media_view.h
     platform/mac/touchbar/mac_touchbar_media_view.mm
+    platform/ios/specific_ios.mm
+    platform/ios/specific_ios.h
+    platform/ios/integration_ios.mm
+    platform/ios/integration_ios.h
+    platform/ios/main_window_ios.mm
+    platform/ios/main_window_ios.h
+    platform/ios/file_utilities_ios.mm
+    platform/ios/file_utilities_ios.h
+    platform/ios/notifications_manager_ios.mm
+    platform/ios/notifications_manager_ios.h
+    platform/ios/tray_ios.mm
+    platform/ios/tray_ios.h
+    platform/ios/ui/AppDelegate.mm
+    platform/ios/ui/AppDelegate.h
+    platform/ios/ui/main.mm
+    platform/ios/ui/MainViewController.mm
+    platform/ios/ui/MainViewController.h
+    platform/ios/ui/UIWidget.mm
+    platform/ios/ui/UIWidget.h
+    platform/ios/ui/TDIOSButton.mm
+    platform/ios/ui/TDIOSButton.h
+    platform/ios/ui/TDIOSLabel.mm
+    platform/ios/ui/TDIOSLabel.h
+    platform/ios/ui/TDIOSTextField.mm
+    platform/ios/ui/TDIOSTextField.h
+    platform/ios/ui/TDIOSScrollView.mm
+    platform/ios/ui/TDIOSScrollView.h
+    platform/ios/ui/TDIOSStackView.mm
+    platform/ios/ui/TDIOSStackView.h
+    platform/ios/ui/RpWidgetAdapter.mm
+    platform/ios/ui/RpWidgetAdapter.h
+    platform/ios/ui/RpWidgetIOS.mm
+    platform/ios/ui/RpWidgetIOS.h
+    platform/ios/ui/RpWidgetIOSBridge.mm
+    platform/ios/ui/RpWidgetIOSBridge.h
+    platform/ios/ui/MainWidgetIOS.mm
+    platform/ios/ui/MainWidgetIOS.h
+    platform/ios/ui/DialogsWidgetIOS.mm
+    platform/ios/ui/DialogsWidgetIOS.h
+    platform/ios/ui/HistoryWidgetIOS.mm
+    platform/ios/ui/HistoryWidgetIOS.h
+    platform/ios/ui/IntroWidgetIOS.mm
+    platform/ios/ui/IntroWidgetIOS.h
+    platform/ios/ui/SettingsWidgetIOS.mm
+    platform/ios/ui/SettingsWidgetIOS.h
+    platform/ios/ui/HistoryInnerWidgetIOS.mm
+    platform/ios/ui/HistoryInnerWidgetIOS.h
+    platform/ios/ui/DialogsInnerWidgetIOS.mm
+    platform/ios/ui/DialogsInnerWidgetIOS.h
+    platform/ios/ui/InfoProfileWidgetIOS.mm
+    platform/ios/ui/InfoProfileWidgetIOS.h
+    platform/ios/ui/InfoMediaWidgetIOS.mm
+    platform/ios/ui/InfoMediaWidgetIOS.h
+    platform/ios/ui/BoxIOS.mm
+    platform/ios/ui/BoxIOS.h
+    platform/ios/ui/TabbedSelectorIOS.mm
+    platform/ios/ui/TabbedSelectorIOS.h
+    platform/ios/ui/IOSWidgetGenerator.h
+    platform/ios/ui/CompleteIOSMigration.h
     platform/win/file_utilities_win.cpp
     platform/win/file_utilities_win.h
     platform/win/launcher_win.cpp
@@ -1931,6 +1994,12 @@ PRIVATE
     tray.cpp
     tray.h
 )
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    remove_target_sources(Telegram ${src_loc}
+        main.cpp
+    )
+endif()
 
 if (NOT build_winstore)
     remove_target_sources(Telegram ${src_loc}
