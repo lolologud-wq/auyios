@@ -16,7 +16,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: recursive
+        submodules: 'recursive'
+        
+    - name: Verify submodules
+      run: |
+        echo "Checking if cmake submodule exists:"
+        ls -la cmake/ || echo "cmake/ directory not found"
+        if [ -d "cmake" ] && [ -n "$(ls -A cmake)" ]; then
+          echo "✓ cmake submodule is initialized"
+          ls cmake/ | head -10
+        else
+          echo "✗ cmake submodule is empty or missing"
+          echo "Attempting to initialize submodules manually..."
+          git submodule update --init --recursive
+        fi
       
     - name: Set up Xcode
       uses: maxim-lobanov/setup-xcode@v1
