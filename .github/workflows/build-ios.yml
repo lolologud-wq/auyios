@@ -1,0 +1,48 @@
+name: Build iOS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'Telegram/SourceFiles/platform/ios/**'
+      - '.github/workflows/build-ios.yml'
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+        
+    - name: Install dependencies
+      run: |
+        brew install cmake
+        # Add other dependencies as needed
+        
+    - name: Configure CMake for iOS
+      run: |
+        cd Telegram
+        cmake -DCMAKE_SYSTEM_NAME=iOS \
+              -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+              -B build-ios \
+              -S .
+              
+    - name: Build
+      run: |
+        cd Telegram
+        cmake --build build-ios --config Release
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-build
+        path: Telegram/build-ios/
+
