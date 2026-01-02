@@ -122,6 +122,8 @@ jobs:
               -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
               -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
               -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="" \
+              -DCMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET=13.0 \
+              -DCMAKE_XCODE_ATTRIBUTE_SDKROOT=iphoneos \
               -B build-ios \
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
         echo ""
@@ -134,26 +136,30 @@ jobs:
     - name: Build
       continue-on-error: true
       run: |
-        echo "Building iOS project with Xcode..."
+        echo "Building iOS project..."
         echo "Checking build directory structure:"
-        ls -la build-ios/ | head -10
+        ls -la build-ios/ | head -20
         echo ""
-        echo "Finding Xcode project:"
-        XCODE_PROJ=$(find build-ios -name "*.xcodeproj" | head -1)
-        if [ -z "$XCODE_PROJ" ]; then
-          echo "ERROR: Xcode project not found!"
-          echo "Trying to build with cmake --build anyway..."
-          cmake --build build-ios --config Release 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+        echo "Finding all Xcode projects:"
+        find build-ios -name "*.xcodeproj" -type d | head -10
+        echo ""
+        echo "Finding main Telegram Xcode project:"
+        MAIN_PROJ=$(find build-ios -name "Telegram.xcodeproj" -type d | head -1)
+        if [ -z "$MAIN_PROJ" ]; then
+          echo "Telegram.xcodeproj not found, looking for any .xcodeproj in root..."
+          MAIN_PROJ=$(find build-ios -maxdepth 2 -name "*.xcodeproj" -type d | grep -v "CMakeFiles" | head -1)
+        fi
+        echo ""
+        if [ -n "$MAIN_PROJ" ]; then
+          echo "Found main project: $MAIN_PROJ"
+          echo "Listing available schemes:"
+          xcodebuild -project "$MAIN_PROJ" -list || echo "Could not list schemes"
+          echo ""
+          echo "Building with cmake --build (recommended for CMake-generated projects)..."
+          cmake --build build-ios --config Release -- -jobs $(sysctl -n hw.ncpu) 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
         else
-          echo "Found Xcode project: $XCODE_PROJ"
-          echo "Building with xcodebuild..."
-          xcodebuild -project "$XCODE_PROJ" \
-                     -scheme Telegram \
-                     -configuration Release \
-                     -sdk iphoneos \
-                     -arch arm64 \
-                     -jobs $(sysctl -n hw.ncpu) \
-                     2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+          echo "No main Xcode project found, using cmake --build directly..."
+          cmake --build build-ios --config Release -- -jobs $(sysctl -n hw.ncpu) 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
         fi
         
     - name: Create IPA (if build succeeded)
