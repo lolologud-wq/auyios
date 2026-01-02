@@ -177,16 +177,23 @@ jobs:
         echo "Configuring Boost for iOS..."
         ./bootstrap.sh --prefix="${BOOST_INSTALL_DIR}" || exit 1
         echo "Building Boost for iOS (this may take 20-30 minutes)..."
-        ./b2 toolset=darwin \
-            architecture=arm \
-            address-model=64 \
-            target-os=iphone \
-            macosx-version=iphone-13.0 \
-            cxxflags="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0" \
-            linkflags="-arch arm64 -isysroot ${IOS_SDK_PATH}" \
+        echo "Creating user-config.jam for iOS..."
+        IOS_CLANG=$(xcrun --find --sdk iphoneos clang++)
+        IOS_AR=$(xcrun --find --sdk iphoneos ar)
+        IOS_RANLIB=$(xcrun --find --sdk iphoneos ranlib)
+        cat > user-config.jam << EOF
+using clang : ios : ${IOS_CLANG} : 
+    <archiver>${IOS_AR}
+    <ranlib>${IOS_RANLIB}
+    <compileflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0 -std=c++17
+    <linkflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0
+    ;
+EOF
+        ./b2 toolset=clang-ios \
             variant=release \
             threading=multi \
             --prefix="${BOOST_INSTALL_DIR}" \
+            --user-config=user-config.jam \
             --with-filesystem \
             --with-system \
             --with-thread \
