@@ -109,18 +109,52 @@ jobs:
       run: |
         echo "Configuring CMake for iOS from root directory..."
         echo "Current directory: $(pwd)"
-        cmake -DCMAKE_SYSTEM_NAME=iOS \
+        echo "Checking if cmake directory exists:"
+        ls -la cmake/ | head -5
+        echo ""
+        echo "Configuring CMake with Xcode generator for iOS..."
+        cmake -G Xcode \
+              -DCMAKE_SYSTEM_NAME=iOS \
               -DCMAKE_OSX_ARCHITECTURES=arm64 \
               -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
               -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO \
+              -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=NO \
+              -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO \
+              -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="" \
               -B build-ios \
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
+        echo ""
+        echo "CMake configuration completed. Checking build directory:"
+        ls -la build-ios/ | head -10
+        echo ""
+        echo "Checking for Xcode project file:"
+        find build-ios -name "*.xcodeproj" -o -name "*.xcworkspace" | head -5
               
     - name: Build
       continue-on-error: true
       run: |
-        echo "Building iOS project..."
-        cmake --build build-ios --config Release -j$(sysctl -n hw.ncpu) 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+        echo "Building iOS project with Xcode..."
+        echo "Checking build directory structure:"
+        ls -la build-ios/ | head -10
+        echo ""
+        echo "Finding Xcode project:"
+        XCODE_PROJ=$(find build-ios -name "*.xcodeproj" | head -1)
+        if [ -z "$XCODE_PROJ" ]; then
+          echo "ERROR: Xcode project not found!"
+          echo "Trying to build with cmake --build anyway..."
+          cmake --build build-ios --config Release 2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+        else
+          echo "Found Xcode project: $XCODE_PROJ"
+          echo "Building with xcodebuild..."
+          xcodebuild -project "$XCODE_PROJ" \
+                     -scheme Telegram \
+                     -configuration Release \
+                     -sdk iphoneos \
+                     -arch arm64 \
+                     -jobs $(sysctl -n hw.ncpu) \
+                     2>&1 | tee build.log || (echo "Build failed. Last 100 lines of log:"; tail -100 build.log; exit 1)
+        fi
         
     - name: Create IPA (if build succeeded)
       if: success()
