@@ -181,14 +181,14 @@ jobs:
         IOS_CLANG=$(xcrun --find --sdk iphoneos clang++)
         IOS_AR=$(xcrun --find --sdk iphoneos ar)
         IOS_RANLIB=$(xcrun --find --sdk iphoneos ranlib)
-        cat > user-config.jam << EOF
-using clang : ios : ${IOS_CLANG} : 
-    <archiver>${IOS_AR}
-    <ranlib>${IOS_RANLIB}
-    <compileflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0 -std=c++17
-    <linkflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0
-    ;
-EOF
+        {
+          echo "using clang : ios : ${IOS_CLANG} :"
+          echo "    <archiver>${IOS_AR}"
+          echo "    <ranlib>${IOS_RANLIB}"
+          echo "    <compileflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0 -std=c++17"
+          echo "    <linkflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0"
+          echo "    ;"
+        } > user-config.jam
         ./b2 toolset=clang-ios \
             variant=release \
             threading=multi \
