@@ -202,9 +202,13 @@ jobs:
             install || exit 1
         cd ..
         echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
-        echo "Setting CMAKE_PREFIX_PATH to include Boost..."
+        echo "Checking installed Boost files:"
+        ls -la "${BOOST_INSTALL_DIR}/lib/cmake/" || echo "Boost cmake directory not found"
+        echo "Setting CMAKE_PREFIX_PATH and Boost_DIR..."
         export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
+        export Boost_DIR="${BOOST_INSTALL_DIR}/lib/cmake/Boost-1.84.0"
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
+        echo "Boost_DIR=${Boost_DIR}" >> $GITHUB_ENV
         
     - name: Configure CMake for iOS
       run: |
@@ -215,6 +219,7 @@ jobs:
         echo ""
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
         echo "ada_DIR=${ada_DIR}"
+        echo "Boost_DIR=${Boost_DIR}"
         echo ""
         echo "Configuring CMake with Xcode generator for iOS..."
         cmake -G Xcode \
@@ -230,6 +235,7 @@ jobs:
               -DCMAKE_XCODE_ATTRIBUTE_SDKROOT=iphoneos \
               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
               -Dada_DIR="${ada_DIR}" \
+              -DBoost_DIR="${Boost_DIR}" \
               -B build-ios \
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
         echo ""
