@@ -204,12 +204,16 @@ jobs:
         echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
         echo "Checking installed Boost files:"
         ls -la "${BOOST_INSTALL_DIR}/lib/cmake/" || echo "Boost cmake directory not found"
+        echo "Checking boost_headers:"
+        ls -la "${BOOST_INSTALL_DIR}/lib/cmake/boost_headers-1.84.0/" || echo "boost_headers not found"
         echo "Setting CMAKE_PREFIX_PATH and Boost_DIR..."
-        export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
+        export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}/lib/cmake:${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
         export Boost_DIR="${BOOST_INSTALL_DIR}/lib/cmake/Boost-1.84.0"
+        export boost_headers_DIR="${BOOST_INSTALL_DIR}/lib/cmake/boost_headers-1.84.0"
         export BOOST_ROOT="${BOOST_INSTALL_DIR}"
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
         echo "Boost_DIR=${Boost_DIR}" >> $GITHUB_ENV
+        echo "boost_headers_DIR=${boost_headers_DIR}" >> $GITHUB_ENV
         echo "BOOST_ROOT=${BOOST_ROOT}" >> $GITHUB_ENV
         
     - name: Configure CMake for iOS
@@ -222,6 +226,8 @@ jobs:
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
         echo "ada_DIR=${ada_DIR}"
         echo "Boost_DIR=${Boost_DIR}"
+        echo "boost_headers_DIR=${boost_headers_DIR}"
+        echo "BOOST_ROOT=${BOOST_ROOT}"
         echo ""
         echo "Configuring CMake with Xcode generator for iOS..."
         cmake -G Xcode \
@@ -238,6 +244,7 @@ jobs:
               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
               -Dada_DIR="${ada_DIR}" \
               -DBoost_DIR="${Boost_DIR}" \
+              -Dboost_headers_DIR="${boost_headers_DIR}" \
               -DBOOST_ROOT="${BOOST_ROOT}" \
               -DBoost_NO_SYSTEM_PATHS=ON \
               -B build-ios \
