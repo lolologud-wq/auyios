@@ -177,30 +177,28 @@ jobs:
         echo "Configuring Boost for iOS..."
         ./bootstrap.sh --prefix="${BOOST_INSTALL_DIR}" || exit 1
         echo "Building Boost for iOS (this may take 20-30 minutes)..."
-        echo "Creating user-config.jam for iOS..."
+        echo "Setting up iOS toolchain..."
         IOS_CLANG=$(xcrun --find --sdk iphoneos clang++)
-        IOS_AR=$(xcrun --find --sdk iphoneos ar)
-        IOS_RANLIB=$(xcrun --find --sdk iphoneos ranlib)
-        {
-          echo "using clang : ios : ${IOS_CLANG} :"
-          echo "    <archiver>${IOS_AR}"
-          echo "    <ranlib>${IOS_RANLIB}"
-          echo "    <compileflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0 -std=c++17"
-          echo "    <linkflags>-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0"
-          echo "    ;"
-        } > user-config.jam
-        ./b2 toolset=clang-ios \
+        export CC="${IOS_CLANG}"
+        export CXX="${IOS_CLANG}"
+        export AR=$(xcrun --find --sdk iphoneos ar)
+        export RANLIB=$(xcrun --find --sdk iphoneos ranlib)
+        export CXXFLAGS="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0 -std=c++17"
+        export LDFLAGS="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0"
+        echo "Building Boost..."
+        ./b2 toolset=clang \
             variant=release \
             link=static \
             threading=multi \
             --prefix="${BOOST_INSTALL_DIR}" \
-            --user-config=user-config.jam \
             --with-filesystem \
             --with-system \
             --with-thread \
             --with-chrono \
             --with-date_time \
             --with-regex \
+            cxxflags="${CXXFLAGS}" \
+            linkflags="${LDFLAGS}" \
             install || exit 1
         cd ..
         echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
