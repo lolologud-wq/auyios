@@ -119,12 +119,42 @@ jobs:
           exit 1
         fi
         
+    - name: Build ada library for iOS
+      run: |
+        echo "Building ada library for iOS..."
+        ADA_VERSION="v3.2.4"
+        ADA_BUILD_DIR="ada-build-ios"
+        echo "Cloning ada library..."
+        git clone -b ${ADA_VERSION} --depth 1 https://github.com/ada-url/ada.git ada-source || exit 1
+        cd ada-source
+        echo "Configuring ada for iOS..."
+        cmake -B build \
+              -DCMAKE_SYSTEM_NAME=iOS \
+              -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+              -DADA_TESTING=OFF \
+              -DADA_TOOLS=OFF \
+              -DADA_INCLUDE_URL_PATTERN=OFF \
+              -DCMAKE_INSTALL_PREFIX="${PWD}/../${ADA_BUILD_DIR}/install" \
+              -DCMAKE_BUILD_TYPE=Release || exit 1
+        echo "Building ada..."
+        cmake --build build --config Release || exit 1
+        echo "Installing ada..."
+        cmake --install build || exit 1
+        cd ..
+        echo "ada library built and installed to: ${ADA_BUILD_DIR}/install"
+        echo "Setting CMAKE_PREFIX_PATH to include ada..."
+        export CMAKE_PREFIX_PATH="${PWD}/${ADA_BUILD_DIR}/install:${CMAKE_PREFIX_PATH}"
+        echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
+        
     - name: Configure CMake for iOS
       run: |
         echo "Configuring CMake for iOS from root directory..."
         echo "Current directory: $(pwd)"
         echo "Checking if cmake directory exists:"
         ls -la cmake/ | head -5
+        echo ""
+        echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
         echo ""
         echo "Configuring CMake with Xcode generator for iOS..."
         cmake -G Xcode \
@@ -138,6 +168,7 @@ jobs:
               -DCMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM="" \
               -DCMAKE_XCODE_ATTRIBUTE_IPHONEOS_DEPLOYMENT_TARGET=13.0 \
               -DCMAKE_XCODE_ATTRIBUTE_SDKROOT=iphoneos \
+              -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
               -B build-ios \
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
         echo ""
