@@ -160,6 +160,46 @@ jobs:
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
         echo "ada_DIR=${ada_DIR}" >> $GITHUB_ENV
         
+    - name: Build Boost library for iOS
+      timeout-minutes: 60
+      run: |
+        echo "Building Boost library for iOS..."
+        BOOST_VERSION="1.84.0"
+        BOOST_BUILD_DIR="boost-build-ios"
+        BOOST_INSTALL_DIR="${PWD}/${BOOST_BUILD_DIR}/install"
+        IOS_SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+        echo "iOS SDK path: ${IOS_SDK_PATH}"
+        echo "Downloading Boost..."
+        curl -L https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION//./_}.tar.bz2 -o boost.tar.bz2 || exit 1
+        echo "Extracting Boost..."
+        tar -xjf boost.tar.bz2 || exit 1
+        cd boost_${BOOST_VERSION//./_}
+        echo "Configuring Boost for iOS..."
+        ./bootstrap.sh --prefix="${BOOST_INSTALL_DIR}" || exit 1
+        echo "Building Boost for iOS (this may take 20-30 minutes)..."
+        ./b2 toolset=darwin \
+            architecture=arm \
+            address-model=64 \
+            target-os=iphone \
+            macosx-version=iphone-13.0 \
+            cxxflags="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0" \
+            linkflags="-arch arm64 -isysroot ${IOS_SDK_PATH}" \
+            variant=release \
+            threading=multi \
+            --prefix="${BOOST_INSTALL_DIR}" \
+            --with-filesystem \
+            --with-system \
+            --with-thread \
+            --with-chrono \
+            --with-date_time \
+            --with-regex \
+            install || exit 1
+        cd ..
+        echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
+        echo "Setting CMAKE_PREFIX_PATH to include Boost..."
+        export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
+        echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
+        
     - name: Configure CMake for iOS
       run: |
         echo "Configuring CMake for iOS from root directory..."
