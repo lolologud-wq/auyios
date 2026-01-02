@@ -45,7 +45,9 @@ include(cmake/validate_d3d_compiler.cmake)
 include(cmake/target_prepare_qrc.cmake)
 
 include(cmake/options.cmake)
-include(cmake/external/qt/package.cmake)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    include(cmake/external/qt/package.cmake)
+endif()
 
 set(desktop_app_skip_libs
     glibmm

@@ -57,7 +57,9 @@ if (WIN32)
     )
 endif()
 
-set_target_properties(Telegram PROPERTIES AUTOMOC ON)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set_target_properties(Telegram PROPERTIES AUTOMOC ON)
+endif()
 
 target_link_libraries(Telegram
 PRIVATE
@@ -92,8 +94,8 @@ PRIVATE
     desktop-app::external_rlottie
     desktop-app::external_zlib
     desktop-app::external_kcoreaddons
-    desktop-app::external_qt_static_plugins
-    desktop-app::external_qt
+    $<$<NOT:$<STREQUAL:${CMAKE_SYSTEM_NAME},iOS>>:desktop-app::external_qt_static_plugins>
+    $<$<NOT:$<STREQUAL:${CMAKE_SYSTEM_NAME},iOS>>:desktop-app::external_qt>
     desktop-app::external_qr_code_generator
     desktop-app::external_crash_reports
     desktop-app::external_auto_updates
@@ -2239,6 +2241,8 @@ PRIVATE
     TDESKTOP_API_HASH=${TDESKTOP_API_HASH}
     G_LOG_DOMAIN="Telegram"
     U_STATIC_IMPLEMENTATION=1 # AyuGram: do not use __declspec(dllimport) when including icu headers
+    $<$<STREQUAL:${CMAKE_SYSTEM_NAME},iOS>:TDESKTOP_IOS=1>
+    $<$<STREQUAL:${CMAKE_SYSTEM_NAME},iOS>:Q_OS_IOS=1>
 )
 
 get_property(is_multi_config GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -2389,7 +2393,7 @@ if (NOT DESKTOP_APP_DISABLE_AUTOUPDATE AND NOT build_macstore AND NOT build_wins
 
         target_link_libraries(Packer
         PRIVATE
-            desktop-app::external_qt
+            $<$<NOT:$<STREQUAL:${CMAKE_SYSTEM_NAME},iOS>>:desktop-app::external_qt>
             desktop-app::external_zlib
             desktop-app::external_auto_updates
             desktop-app::external_openssl
