@@ -207,8 +207,10 @@ jobs:
         echo "Setting CMAKE_PREFIX_PATH and Boost_DIR..."
         export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
         export Boost_DIR="${BOOST_INSTALL_DIR}/lib/cmake/Boost-1.84.0"
+        export BOOST_ROOT="${BOOST_INSTALL_DIR}"
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
         echo "Boost_DIR=${Boost_DIR}" >> $GITHUB_ENV
+        echo "BOOST_ROOT=${BOOST_ROOT}" >> $GITHUB_ENV
         
     - name: Configure CMake for iOS
       run: |
@@ -236,6 +238,8 @@ jobs:
               -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
               -Dada_DIR="${ada_DIR}" \
               -DBoost_DIR="${Boost_DIR}" \
+              -DBOOST_ROOT="${BOOST_ROOT}" \
+              -DBoost_NO_SYSTEM_PATHS=ON \
               -B build-ios \
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
         echo ""
