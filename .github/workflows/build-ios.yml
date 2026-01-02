@@ -193,8 +193,6 @@ jobs:
             variant=release \
             link=static \
             threading=multi \
-            architecture=arm \
-            address-model=64 \
             --prefix="${BOOST_INSTALL_DIR}" \
             --user-config=user-config.jam \
             --with-filesystem \
@@ -203,8 +201,6 @@ jobs:
             --with-chrono \
             --with-date_time \
             --with-regex \
-            cxxflags="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0" \
-            linkflags="-arch arm64 -isysroot ${IOS_SDK_PATH} -miphoneos-version-min=13.0" \
             install || exit 1
         cd ..
         echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
