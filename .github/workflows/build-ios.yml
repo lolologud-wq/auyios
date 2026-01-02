@@ -94,6 +94,20 @@ jobs:
           echo "SUCCESS: cmake submodule is properly initialized!"
           echo "cmake directory contents:"
           ls -la cmake/ | head -20
+          echo ""
+          echo "Checking for cmake/external directory:"
+          if [ -d "cmake/external" ]; then
+            echo "cmake/external exists"
+            ls -la cmake/external/ | head -20
+            if [ -d "cmake/external/ada" ]; then
+              echo "cmake/external/ada exists"
+              ls -la cmake/external/ada/
+            else
+              echo "WARNING: cmake/external/ada does not exist"
+            fi
+          else
+            echo "WARNING: cmake/external does not exist"
+          fi
         else
           echo "ERROR: cmake submodule verification failed!"
           if [ -d "cmake" ]; then

@@ -65,7 +65,7 @@ target_link_libraries(Telegram
 PRIVATE
     tdesktop::lib_tgcalls
 
-    # Order in this list defines the order of include paths in command line
+    # Order in this list defines the order of include paths in command line.
     # We need to place desktop-app::external_minizip this early to have its
     # include paths (usually ${PREFIX}/include/minizip) before any depend that
     # would add ${PREFIX}/include. This path may have a different <zip.h>,
