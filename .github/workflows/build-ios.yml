@@ -16,48 +16,54 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        submodules: recursive
-        token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: false
+        fetch-depth: 0
         
     - name: Initialize submodules
       run: |
         echo "Initializing submodules..."
-        git config --global http.https://github.com/.extraheader "AUTHORIZATION: basic ${{ secrets.GITHUB_TOKEN }}"
-        git submodule sync --recursive
-        git submodule update --init --recursive --depth 1
-        echo "Submodules initialized"
-        
-    - name: List submodules
-      run: |
-        echo "Checking submodule status:"
+        echo "Current directory: $(pwd)"
+        echo "Listing .gitmodules:"
+        cat .gitmodules | grep -A 2 "cmake" || echo "cmake not found in .gitmodules"
+        echo ""
+        echo "Checking git submodule status before init:"
+        git submodule status || echo "No submodules initialized yet"
+        echo ""
+        echo "Initializing all submodules (without depth limit)..."
+        git submodule update --init --recursive --no-single-branch
+        echo ""
+        echo "Checking submodule status after init:"
         git submodule status
         echo ""
-        echo "Checking if cmake submodule exists:"
+        echo "Checking if cmake directory exists:"
         if [ -d "cmake" ]; then
-          echo "cmake directory exists"
+          echo "SUCCESS: cmake directory exists"
           ls -la cmake/ | head -10
           if [ -f "cmake/validate_special_target.cmake" ]; then
-            echo "SUCCESS: cmake submodule is properly initialized!"
+            echo "SUCCESS: cmake/validate_special_target.cmake found!"
           else
             echo "WARNING: cmake/validate_special_target.cmake not found"
-            echo "Trying to fetch cmake submodule manually..."
-            cd cmake || exit 1
-            git fetch --depth 1 || true
-            git checkout HEAD || true
-            cd ..
+            echo "Listing cmake directory contents:"
+            find cmake -type f -name "*.cmake" | head -10
+            echo ""
+            echo "Trying to checkout cmake submodule to latest:"
+            cd cmake && git fetch && git checkout $(git describe --tags --abbrev=0 2>/dev/null || git rev-parse HEAD) && cd ..
             if [ -f "cmake/validate_special_target.cmake" ]; then
               echo "SUCCESS: cmake submodule fixed!"
-            else
-              echo "ERROR: cmake submodule still not working"
-              exit 1
             fi
           fi
         else
           echo "ERROR: cmake directory does not exist!"
-          echo "Trying to initialize cmake submodule manually..."
-          git submodule update --init --recursive cmake || exit 1
-          if [ ! -d "cmake" ]; then
-            echo "ERROR: Failed to initialize cmake submodule!"
+          echo "Checking git submodule foreach:"
+          git submodule foreach 'echo $name: $path' || true
+          echo ""
+          echo "Trying to manually clone cmake submodule:"
+          mkdir -p cmake
+          git clone --depth 1 https://github.com/desktop-app/cmake_helpers.git cmake || exit 1
+          if [ -f "cmake/validate_special_target.cmake" ]; then
+            echo "SUCCESS: cmake submodule manually cloned!"
+          else
+            echo "ERROR: Still cannot get cmake submodule"
             exit 1
           fi
         fi
@@ -83,24 +89,19 @@ jobs:
         
     - name: Verify submodules
       run: |
-        echo "Verifying cmake submodule:"
-        if [ ! -d "cmake" ]; then
-          echo "ERROR: cmake directory does not exist!"
-          echo "Trying to initialize cmake submodule manually..."
-          git submodule update --init --recursive cmake || true
-        fi
-        if [ -d "cmake" ]; then
-          echo "cmake directory exists, listing contents:"
+        echo "Final verification of cmake submodule:"
+        if [ -d "cmake" ] && [ -f "cmake/validate_special_target.cmake" ]; then
+          echo "SUCCESS: cmake submodule is properly initialized!"
+          echo "cmake directory contents:"
           ls -la cmake/ | head -20
-          if [ -f "cmake/validate_special_target.cmake" ]; then
-            echo "SUCCESS: cmake submodule is properly initialized!"
-          else
-            echo "WARNING: cmake/validate_special_target.cmake not found, but directory exists"
-            echo "Contents of cmake/:"
-            find cmake -type f -name "*.cmake" | head -10
-          fi
         else
-          echo "ERROR: cmake submodule still not initialized after manual attempt!"
+          echo "ERROR: cmake submodule verification failed!"
+          if [ -d "cmake" ]; then
+            echo "cmake directory exists but validate_special_target.cmake is missing"
+            find cmake -type f | head -20
+          else
+            echo "cmake directory does not exist!"
+          fi
           exit 1
         fi
         
@@ -144,4 +145,3 @@ jobs:
       with:
         name: ios-build
         path: Telegram/build-ios/
-
