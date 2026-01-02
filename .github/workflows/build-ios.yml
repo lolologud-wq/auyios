@@ -204,16 +204,24 @@ jobs:
         echo "Boost library built and installed to: ${BOOST_INSTALL_DIR}"
         echo "Checking installed Boost files:"
         ls -la "${BOOST_INSTALL_DIR}/lib/cmake/" || echo "Boost cmake directory not found"
+        echo "Checking boost_headers specifically:"
+        if [ -d "${BOOST_INSTALL_DIR}/lib/cmake/boost_headers-1.84.0" ]; then
+          echo "boost_headers-1.84.0 directory exists:"
+          ls -la "${BOOST_INSTALL_DIR}/lib/cmake/boost_headers-1.84.0/"
+          if [ -f "${BOOST_INSTALL_DIR}/lib/cmake/boost_headers-1.84.0/boost_headers-config.cmake" ]; then
+            echo "SUCCESS: boost_headers-config.cmake found!"
+          else
+            echo "ERROR: boost_headers-config.cmake NOT found in boost_headers-1.84.0/"
+          fi
+        else
+          echo "ERROR: boost_headers-1.84.0 directory does not exist!"
+        fi
         echo "Setting CMAKE_PREFIX_PATH and Boost variables..."
+        # Add lib/cmake to prefix path so CMake can find all Boost components
         export CMAKE_PREFIX_PATH="${BOOST_INSTALL_DIR}/lib/cmake:${BOOST_INSTALL_DIR}:${CMAKE_PREFIX_PATH}"
         export Boost_DIR="${BOOST_INSTALL_DIR}/lib/cmake/Boost-1.84.0"
         export BOOST_ROOT="${BOOST_INSTALL_DIR}"
         export BOOST_LIBRARYDIR="${BOOST_INSTALL_DIR}/lib"
-        # Set component DIRs for all Boost components we built
-        for component in headers filesystem system thread chrono date_time regex; do
-          export boost_${component}_DIR="${BOOST_INSTALL_DIR}/lib/cmake/boost_${component}-1.84.0"
-          echo "boost_${component}_DIR=${BOOST_INSTALL_DIR}/lib/cmake/boost_${component}-1.84.0" >> $GITHUB_ENV
-        done
         echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}" >> $GITHUB_ENV
         echo "Boost_DIR=${Boost_DIR}" >> $GITHUB_ENV
         echo "BOOST_ROOT=${BOOST_ROOT}" >> $GITHUB_ENV
@@ -254,10 +262,24 @@ jobs:
               -S . 2>&1 | tee cmake-config.log || (echo "CMake configuration failed. Log:"; cat cmake-config.log; exit 1)
         echo ""
         echo "CMake configuration completed. Checking build directory:"
-        ls -la build-ios/ | head -10
+        ls -la build-ios/ | head -20
         echo ""
         echo "Checking for Xcode project file:"
-        find build-ios -name "*.xcodeproj" -o -name "*.xcworkspace" | head -5
+        XCODE_PROJ=$(find build-ios -name "*.xcodeproj" -type d | grep -v "CMakeFiles" | head -1)
+        if [ -n "$XCODE_PROJ" ]; then
+          echo "SUCCESS: Found Xcode project: $XCODE_PROJ"
+          echo "Xcode project contents:"
+          ls -la "$XCODE_PROJ" | head -10
+        else
+          echo "WARNING: No Xcode project found in build-ios/"
+          echo "All .xcodeproj files (including test projects):"
+          find build-ios -name "*.xcodeproj" -type d | head -10
+          echo "Checking if CMakeCache.txt exists:"
+          if [ -f "build-ios/CMakeCache.txt" ]; then
+            echo "CMakeCache.txt exists, checking for errors..."
+            grep -i "error\|failed\|not found" build-ios/CMakeCache.txt | head -20 || echo "No obvious errors in CMakeCache.txt"
+          fi
+        fi
               
     - name: Build
       continue-on-error: true
